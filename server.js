@@ -100,13 +100,22 @@ app.post('/api/auth/register', async (req, res) => {
   }
   
   const isAdmin = username.toLowerCase() === ADMIN_USERNAME.toLowerCase();
+  const verifyToken = crypto.randomBytes(20).toString('hex');
   
   await supabase.from('users').insert({ 
     id: uuidv4(), email, username, password: hashPassword(password), 
-    isAdmin, isVerified: true, verifyToken: null
+    isAdmin, isVerified: isAdmin, verifyToken: isAdmin ? null : verifyToken
   });
   
-  res.json({ success: true, message: 'Account created successfully! You can now log in.' });
+  if (!isAdmin) {
+    const host = req.get('host') || `localhost:${PORT}`;
+    const protocol = req.get('x-forwarded-proto') || req.protocol || 'http';
+    const verifyUrl = `${protocol}://${host}/verify?token=${verifyToken}`;
+    await sendMail(email, 'Verify your FRAME account', `<p>Click <a href="${verifyUrl}">here</a> to verify your account.</p>`);
+    res.json({ success: true, message: 'Account created! Please check your email to verify before logging in.' });
+  } else {
+    res.json({ success: true, message: 'Admin account created successfully! You can now log in.' });
+  }
 });
 
 app.get('/verify', async (req, res) => {
