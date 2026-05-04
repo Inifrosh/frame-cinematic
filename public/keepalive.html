@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FRAME — Keep Alive</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Cormorant+Garamond:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #050505; --deep: #0a0a0a; --card: #111111; --border: #1e1e1e;
+    --accent: #c8a96e; --accent2: #e8d5a3; --text: #d4d0c8; --muted: #5a5750;
+    --white: #f0ece0; --green: #4caf50; --red: #e05050;
+  }
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: var(--black);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
+  }
+
+  .logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.4rem;
+    font-weight: 300;
+    letter-spacing: 0.3em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 0.3rem;
+  }
+  .logo span { color: var(--white); }
+  .subtitle {
+    font-size: 0.5rem;
+    letter-spacing: 0.35em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 3rem;
+  }
+
+  .card {
+    background: var(--deep);
+    border: 1px solid var(--border);
+    width: min(560px, 100%);
+    padding: 2.5rem;
+  }
+
+  /* URL Input */
+  .input-row {
+    display: flex;
+    gap: 0;
+    margin-bottom: 2rem;
+  }
+  .url-input {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-right: none;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    padding: 0.8rem 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .url-input:focus { border-color: var(--accent); }
+  .url-input::placeholder { color: var(--muted); }
+  .start-btn {
+    background: var(--accent);
+    border: 1px solid var(--accent);
+    color: var(--black);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 0.8rem 1.4rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .start-btn:hover { background: var(--accent2); }
+  .start-btn.active {
+    background: transparent;
+    border-color: var(--red);
+    color: var(--red);
+  }
+  .start-btn.active:hover { background: rgba(224,80,80,0.1); }
+
+  /* Status panel */
+  .status-panel {
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+  .status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--muted);
+    flex-shrink: 0;
+    transition: background 0.3s;
+  }
+  .status-dot.running { background: var(--green); animation: pulse 2s ease-in-out infinite; }
+  .status-dot.pinging { background: var(--accent); animation: none; }
+  .status-dot.error { background: var(--red); animation: none; }
+  @keyframes pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+  .status-info { flex: 1; }
+  .status-label {
+    font-size: 0.52rem;
+    letter-spacing: 0.25em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 0.3rem;
+  }
+  .status-value {
+    font-size: 0.72rem;
+    color: var(--white);
+    letter-spacing: 0.05em;
+  }
+
+  .countdown-ring { position: relative; flex-shrink: 0; }
+  .countdown-ring svg { transform: rotate(-90deg); }
+  .ring-bg { stroke: var(--border); fill: none; }
+  .ring-fill {
+    fill: none;
+    stroke: var(--accent);
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s linear;
+  }
+  .ring-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+
+  /* Log */
+  .log-label {
+    font-size: 0.5rem;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 0.8rem;
+  }
+  .log {
+    background: var(--black);
+    border: 1px solid var(--border);
+    height: 160px;
+    overflow-y: auto;
+    padding: 1rem;
+    scroll-behavior: smooth;
+  }
+  .log::-webkit-scrollbar { width: 3px; }
+  .log::-webkit-scrollbar-track { background: transparent; }
+  .log::-webkit-scrollbar-thumb { background: var(--border); }
+  .log-entry {
+    font-size: 0.55rem;
+    letter-spacing: 0.05em;
+    line-height: 1.8;
+    display: flex;
+    gap: 1rem;
+  }
+  .log-time { color: var(--muted); flex-shrink: 0; }
+  .log-msg { color: var(--text); }
+  .log-msg.ok { color: var(--green); }
+  .log-msg.err { color: var(--red); }
+  .log-msg.info { color: var(--accent); }
+
+  .interval-note {
+    font-size: 0.5rem;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    text-align: center;
+    margin-top: 1.5rem;
+    line-height: 2;
+  }
+  .interval-note a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .interval-note a:hover { text-decoration: underline; }
+
+  /* Ping count */
+  .stats-row {
+    display: flex;
+    gap: 1px;
+    margin-bottom: 1.5rem;
+  }
+  .stat-box {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 1rem;
+    text-align: center;
+  }
+  .stat-num {
+    font-size: 1.4rem;
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    color: var(--white);
+    line-height: 1;
+    margin-bottom: 0.3rem;
+  }
+  .stat-lbl {
+    font-size: 0.45rem;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<div class="logo">FR<span>A</span>ME</div>
+<div class="subtitle">Keep Alive — Render Pinger</div>
+
+<div class="card">
+
+  <!-- URL input -->
+  <div class="input-row">
+    <input
+      class="url-input"
+      id="urlInput"
+      type="url"
+      placeholder="https://your-app.onrender.com"
+      value=""
+    >
+    <button class="start-btn" id="startBtn" onclick="toggle()">Start</button>
+  </div>
+
+  <!-- Status -->
+  <div class="status-panel">
+    <div class="status-dot" id="statusDot"></div>
+    <div class="status-info">
+      <div class="status-label">Status</div>
+      <div class="status-value" id="statusText">Idle — enter your Render URL to begin</div>
+    </div>
+    <!-- Countdown ring -->
+    <div class="countdown-ring" id="ringWrap" style="display:none">
+      <svg width="56" height="56" viewBox="0 0 56 56">
+        <circle class="ring-bg" cx="28" cy="28" r="24" stroke-width="2"/>
+        <circle class="ring-fill" id="ringFill" cx="28" cy="28" r="24" stroke-width="2"
+          stroke-dasharray="150.796" stroke-dashoffset="0"/>
+      </svg>
+      <div class="ring-text" id="ringText">14:00</div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-box">
+      <div class="stat-num" id="statPings">0</div>
+      <div class="stat-lbl">Pings Sent</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num" id="statOk">0</div>
+      <div class="stat-lbl">Success</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num" id="statErr">0</div>
+      <div class="stat-lbl">Errors</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num" id="statUptime">—</div>
+      <div class="stat-lbl">Uptime %</div>
+    </div>
+  </div>
+
+  <!-- Log -->
+  <div class="log-label">Ping Log</div>
+  <div class="log" id="log">
+    <div class="log-entry">
+      <span class="log-time">--:--:--</span>
+      <span class="log-msg info">Waiting for URL...</span>
+    </div>
+  </div>
+
+  <div class="interval-note">
+    Pings every 14 minutes — keep this tab open.<br>
+    For 24/7 uptime without a browser: use
+    <a href="https://cron-job.org" target="_blank" rel="noopener">cron-job.org</a>
+    or <a href="https://uptimerobot.com" target="_blank" rel="noopener">UptimeRobot</a> (both free).
+  </div>
+
+</div>
+
+<script>
+  const INTERVAL_MS = 14 * 60 * 1000; // 14 minutes
+  const CIRCUMFERENCE = 2 * Math.PI * 24; // ~150.796
+
+  let running = false;
+  let intervalId = null;
+  let countdownId = null;
+  let nextPingAt = null;
+  let pingCount = 0;
+  let okCount = 0;
+  let errCount = 0;
+
+  const urlInput  = document.getElementById('urlInput');
+  const startBtn  = document.getElementById('startBtn');
+  const statusDot = document.getElementById('statusDot');
+  const statusTxt = document.getElementById('statusText');
+  const ringWrap  = document.getElementById('ringWrap');
+  const ringFill  = document.getElementById('ringFill');
+  const ringText  = document.getElementById('ringText');
+  const log       = document.getElementById('log');
+
+  function ts() {
+    return new Date().toLocaleTimeString('en-GB', { hour12: false });
+  }
+
+  function addLog(msg, type = '') {
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.innerHTML = `<span class="log-time">${ts()}</span><span class="log-msg ${type}">${msg}</span>`;
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function updateStats() {
+    document.getElementById('statPings').textContent = pingCount;
+    document.getElementById('statOk').textContent = okCount;
+    document.getElementById('statErr').textContent = errCount;
+    const uptime = pingCount > 0 ? ((okCount / pingCount) * 100).toFixed(1) : '—';
+    document.getElementById('statUptime').textContent = pingCount > 0 ? uptime + '%' : '—';
+  }
+
+  function updateRing(secondsLeft) {
+    const total = INTERVAL_MS / 1000;
+    const fraction = secondsLeft / total;
+    const offset = CIRCUMFERENCE * (1 - fraction);
+    ringFill.style.strokeDashoffset = offset;
+
+    const m = Math.floor(secondsLeft / 60);
+    const s = secondsLeft % 60;
+    ringText.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+
+  async function ping() {
+    const url = urlInput.value.trim();
+    if (!url) return;
+
+    statusDot.className = 'status-dot pinging';
+    statusTxt.textContent = 'Pinging...';
+    pingCount++;
+    updateStats();
+
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+      const res = await fetch(url, { method: 'GET', mode: 'no-cors', signal: controller.signal });
+      clearTimeout(timeout);
+      okCount++;
+      updateStats();
+      statusDot.className = 'status-dot running';
+      statusTxt.textContent = `Last ping OK — ${ts()}`;
+      addLog(`→ ${url} — 200 OK`, 'ok');
+    } catch (e) {
+      const msg = e.name === 'AbortError' ? 'Timeout (15s)' : e.message;
+      errCount++;
+      updateStats();
+      statusDot.className = 'status-dot running';
+      statusTxt.textContent = `Last ping failed — ${ts()}`;
+      addLog(`→ ${url} — ${msg}`, 'err');
+    }
+
+    // Reset countdown
+    nextPingAt = Date.now() + INTERVAL_MS;
+  }
+
+  function startCountdown() {
+    clearInterval(countdownId);
+    countdownId = setInterval(() => {
+      const secondsLeft = Math.max(0, Math.round((nextPingAt - Date.now()) / 1000));
+      updateRing(secondsLeft);
+    }, 1000);
+    updateRing(INTERVAL_MS / 1000);
+  }
+
+  async function toggle() {
+    if (running) {
+      // Stop
+      running = false;
+      clearInterval(intervalId);
+      clearInterval(countdownId);
+      startBtn.textContent = 'Start';
+      startBtn.classList.remove('active');
+      statusDot.className = 'status-dot';
+      statusTxt.textContent = 'Stopped';
+      ringWrap.style.display = 'none';
+      urlInput.disabled = false;
+      addLog('Pinger stopped.', 'info');
+    } else {
+      // Start
+      const url = urlInput.value.trim();
+      if (!url || !url.startsWith('http')) {
+        statusTxt.textContent = 'Please enter a valid URL starting with https://';
+        statusDot.className = 'status-dot error';
+        return;
+      }
+      running = true;
+      startBtn.textContent = 'Stop';
+      startBtn.classList.add('active');
+      urlInput.disabled = true;
+      ringWrap.style.display = 'block';
+
+      log.innerHTML = '';
+      addLog(`Started — pinging every 14 minutes`, 'info');
+
+      // Ping immediately, then every 14 min
+      nextPingAt = Date.now() + INTERVAL_MS;
+      await ping();
+      startCountdown();
+
+      intervalId = setInterval(async () => {
+        await ping();
+        startCountdown();
+      }, INTERVAL_MS);
+    }
+  }
+
+  // Allow pressing Enter in URL field
+  urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') toggle(); });
+
+  // Warn on tab close if running
+  window.addEventListener('beforeunload', e => {
+    if (running) {
+      e.preventDefault();
+      e.returnValue = 'The pinger is running — closing this tab will stop it.';
+    }
+  });
+
+  // Restore URL from localStorage
+  const saved = localStorage.getItem('frame_ping_url');
+  if (saved) urlInput.value = saved;
+  urlInput.addEventListener('input', () => localStorage.setItem('frame_ping_url', urlInput.value));
+</script>
+
+</body>
+</html>

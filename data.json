@@ -1,0 +1,174 @@
+{
+  "users": [
+    {
+      "id": "98ee61e4-0a10-4eb4-91be-f2e7121ddf52",
+      "email": "olowoyeyejuwon@gmail.com",
+      "username": "olowoyeyejuwon@gmail.com",
+      "password": "4cc3785120cd4b4da5990062b29d6f15:418ab49b48b9b4557e94d832a2cbc87b2341c0771d1861771b481f1b3f93c92e0a2f2e9d27035978a2802bf90cf0bac7e2711765f7a6929b4bfd4ed1c39274a5",
+      "isAdmin": true,
+      "isVerified": true,
+      "verifyToken": null,
+      "createdAt": "2026-04-10T16:50:57.124Z"
+    },
+    {
+      "id": "7827ec3a-ab65-4676-a493-2544d6b30af5",
+      "email": "framebyini@gmail.com",
+      "username": "Inioluwa",
+      "password": "4cc3785120cd4b4da5990062b29d6f15:418ab49b48b9b4557e94d832a2cbc87b2341c0771d1861771b481f1b3f93c92e0a2f2e9d27035978a2802bf90cf0bac7e2711765f7a6929b4bfd4ed1c39274a5",
+      "isAdmin": true,
+      "isVerified": false,
+      "verifyToken": "3bdbd747eae505ee2fc988e71b758d7bef191e50",
+      "createdAt": "2026-04-10T17:17:29.387Z"
+    }
+  ],
+  "videos": [
+    {
+      "id": "9c36f4f6-1455-4d63-a776-71dc8092f720",
+      "shareId": "258bf4dc1c27",
+      "title": "2025 04 15 23 33 IMG 6035",
+      "category": "Cinematic",
+      "description": "",
+      "filename": "7a33a228-a75d-459e-b06b-fe199bda227e.mp4",
+      "thumbnail": "c22550a0-dd82-4d50-b37c-3154f431940f.jpg",
+      "size": 16453138,
+      "userId": "98ee61e4-0a10-4eb4-91be-f2e7121ddf52",
+      "username": "olowoyeyejuwon@gmail.com",
+      "isPortfolio": true,
+      "created_at": "2026-05-04T17:21:51.411Z"
+    },
+    {
+      "id": "0bb04668-75c0-4501-83ca-88d028fd0bee",
+      "shareId": "8980ac305f8e",
+      "title": "2025 05 25 03 28 IMG 8269",
+      "category": "Cinematic",
+      "description": "",
+      "filename": "f723b6f0-a7ac-4878-9bb7-dbfb2cbb54fc.mp4",
+      "thumbnail": "2e29db67-f67c-4eac-a6dd-d3786b77f414.jpg",
+      "size": 3120122,
+      "userId": "98ee61e4-0a10-4eb4-91be-f2e7121ddf52",
+      "username": "olowoyeyejuwon@gmail.com",
+      "isPortfolio": true,
+      "created_at": "2026-05-04T17:25:50.582Z"
+    },
+    {
+      "id": "b87676b0-63ad-4f5e-a680-fb9697b01d94",
+      "shareId": "191161e77cf8",
+      "title": "2022 12 23 13 51 IMG 8125",
+      "category": "Cinematic",
+      "description": "",
+      "filename": "9e474aaa-aff6-4f38-85de-c2002aca7ea6.mp4",
+      "thumbnail": "632033f0-625d-4c66-ba08-d8b628d3b203.jpg",
+      "size": 4899928,
+      "userId": "98ee61e4-0a10-4eb4-91be-f2e7121ddf52",
+      "username": "olowoyeyejuwon@gmail.com",
+      "isPortfolio": true,
+      "created_at": "2026-05-04T17:41:05.151Z"
+    },
+    {
+      "id": "2595aba6-c95f-4b8c-a976-f7fcc7bc81ef",
+      "shareId": "e5bec83f4b78",
+      "title": "2025 04 15 21 50 IMG 6029",
+      "category": "Cinematic",
+      "description": "",
+      "filename": "dd4a1759-ee99-4139-aa50-9a5aaab7e293.mp4",
+      "thumbnail": "e8667774-6248-44d2-a517-71d83966aa8e.jpg",
+      "size": 18900985,
+      "userId": "98ee61e4-0a10-4eb4-91be-f2e7121ddf52",
+      "username": "olowoyeyejuwon@gmail.com",
+      "isPortfolio": true,
+      "created_at": "2026-05-04T17:41:45.291Z"
+    },
+    {
+      "id": "e5e7293f-6679-4266-b56f-4edf9f768942",
+      "shareId": "57f5578a72ba",
+      "title": "2023 07 22 15 35 IMG 8126",
+      "category": "Cinematic",
+      "description": "",
+      "filename": "0fac3eec-92aa-4723-ab30-d700aedd5017.mp4",
+      "thumbnail": "14fb8f18-ede0-4c49-94f5-f26021b845d3.jpg",
+      "size": 1080500,
+      "userId": "98ee61e4-0a10-4eb4-91be-f2e7121ddf52",
+      "username": "olowoyeyejuwon@gmail.com",
+      "isPortfolio": true,
+      "created_at": "2026-05-04T17:52:13.362Z"
+    },
+    {
+      "id": "7dfade31-f0b4-42e3-9d9b-5940844048be",
+      "shareId": "638347cdd92b",
+      "title": "2024 06 18 08 02 IMG 9507",
+      "category": "Cinematic",
+      "description": "",
+      "filename": "78379ebd-d070-4e4c-b432-adbc859caff4.mp4",
+      "thumbnail": "f545bd7d-4a0a-4a86-8f66-0387ef8d4a20.jpg",
+      "size": 857772,
+      "userId": "98ee61e4-0a10-4eb4-91be-f2e7121ddf52",
+      "username": "olowoyeyejuwon@gmail.com",
+      "isPortfolio": true,
+      "created_at": "2026-05-04T17:52:13.445Z"
+    },
+    {
+      "id": "d328a445-8d4d-400e-a1ba-a281c3c945fa",
+      "shareId": "026261792fcc",
+      "title": "2025 04 13 10 48 IMG 5657",
+      "category": "Cinematic",
+      "description": "",
+      "filename": "bda0b1dc-7239-4c2a-ad33-900b42657598.mp4",
+      "thumbnail": "052aeebb-34fd-462c-9fc5-e3f7a4eef2b6.jpg",
+      "size": 5423992,
+      "userId": "98ee61e4-0a10-4eb4-91be-f2e7121ddf52",
+      "username": "olowoyeyejuwon@gmail.com",
+      "isPortfolio": true,
+      "created_at": "2026-05-04T17:53:46.598Z"
+    },
+    {
+      "id": "54b97a88-77ea-4ca8-b5c9-f75015603eea",
+      "shareId": "7636c1e08d63",
+      "title": "2025 04 17 04 43 IMG 6103",
+      "category": "Cinematic",
+      "description": "",
+      "filename": "aa87ecc0-585d-495e-94d9-db93417277d4.mp4",
+      "thumbnail": "170e1daf-68f0-48d9-b8d7-95a3be9cdb49.jpg",
+      "size": 2741604,
+      "userId": "98ee61e4-0a10-4eb4-91be-f2e7121ddf52",
+      "username": "olowoyeyejuwon@gmail.com",
+      "isPortfolio": true,
+      "created_at": "2026-05-04T17:53:46.644Z"
+    },
+    {
+      "id": "830a2a74-477b-4c23-bf88-c41af2e6e503",
+      "shareId": "6db0c63f180f",
+      "title": "2025 04 23 01 39 IMG 6447",
+      "category": "Cinematic",
+      "description": "",
+      "filename": "ee871224-51e8-41dc-aa56-834ce8e430de.mp4",
+      "thumbnail": "128ee8ec-f349-44b9-993d-c4bc55a2575d.jpg",
+      "size": 621187,
+      "userId": "98ee61e4-0a10-4eb4-91be-f2e7121ddf52",
+      "username": "olowoyeyejuwon@gmail.com",
+      "isPortfolio": true,
+      "created_at": "2026-05-04T17:54:17.511Z"
+    },
+    {
+      "id": "966e197e-9cd6-453f-8a79-90fbed40de0c",
+      "shareId": "98eca8b9db0b",
+      "title": "2025 05 22 14 51 IMG 8103",
+      "category": "Cinematic",
+      "description": "",
+      "filename": "d1cfb658-6aff-457d-a3ec-ab3ffda600c1.mp4",
+      "thumbnail": "c27a06a6-16d6-4d61-829e-dc1aa7bd42bd.jpg",
+      "size": 3791803,
+      "userId": "98ee61e4-0a10-4eb4-91be-f2e7121ddf52",
+      "username": "olowoyeyejuwon@gmail.com",
+      "isPortfolio": true,
+      "created_at": "2026-05-04T20:06:11.440Z"
+    }
+  ],
+  "sessions": {
+    "ba72fa76024b2a9f10133c20d71aabb8d919b769612ab282ebf98f774efa29ff": {
+      "userId": "98ee61e4-0a10-4eb4-91be-f2e7121ddf52",
+      "username": "olowoyeyejuwon@gmail.com",
+      "isAdmin": true,
+      "createdAt": 1777914011303
+    }
+  }
+}
