@@ -160,9 +160,15 @@
   .form-group input, .form-group textarea, .form-group select { width: 100%; background: var(--card); border: 1px solid var(--border); color: var(--text); font-family: 'Space Mono', monospace; font-size: 0.75rem; padding: 0.75rem 1rem; outline: none; transition: border-color 0.2s; resize: none; }
   .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--accent); }
   .form-group select option { background: var(--card); }
-  .modal-submit { width: 100%; background: var(--accent); color: var(--black); border: none; font-family: 'Space Mono', monospace; font-size: 0.65rem; letter-spacing: 0.25em; text-transform: uppercase; padding: 1rem; cursor: pointer; font-weight: 700; transition: all 0.3s; margin-top: 0.5rem; }
-  .modal-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+  .modal-submit { width: 100%; background: var(--accent); color: var(--black); border: none; font-family: 'Space Mono', monospace; font-size: 0.65rem; letter-spacing: 0.25em; text-transform: uppercase; padding: 1rem; cursor: pointer; font-weight: 700; transition: all 0.3s; margin-top: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.6rem; }
+  .modal-submit:disabled { opacity: 0.7; cursor: not-allowed; }
   .modal-submit:not(:disabled):hover { background: var(--accent2); }
+  .btn-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid transparent; border-top-color: var(--black); border-right-color: var(--black); border-radius: 50%; animation: btnSpin 0.6s linear infinite; }
+  @keyframes btnSpin { to { transform: rotate(360deg); } }
+  .eye-toggle { position:absolute;right:0;top:0;height:100%;background:none;border:none;padding:0 0.8rem;cursor:pointer;display:flex;align-items:center;transition:filter 0.2s; }
+  .eye-toggle:hover { filter: drop-shadow(0 0 4px rgba(200,169,110,0.5)); }
+  .eye-toggle svg { transition: transform 0.2s ease; }
+  .eye-toggle:hover svg { transform: scale(1.15); }
   .upload-progress { margin-top: 1.2rem; display: none; }
   .upload-progress.show { display: block; }
   .progress-bar-wrap { height: 2px; background: var(--border); margin-bottom: 0.5rem; }
@@ -370,7 +376,7 @@
     <!-- LOGIN -->
     <div class="auth-form active" id="loginForm">
       <div class="form-group"><label>Email</label><input type="text" id="loginEmail" placeholder="your@email.com" autocomplete="email"></div>
-      <div class="form-group"><label>Password</label><div style="position:relative"><input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" style="padding-right:2.5rem;"><button type="button" onclick="togglePassword('loginPassword')" style="position:absolute;right:0;top:0;height:100%;background:none;border:none;color:var(--muted);padding:0 0.8rem;cursor:pointer;font-size:0.8rem;">👁</button></div></div>
+      <div class="form-group"><label>Password</label><div style="position:relative"><input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" style="padding-right:2.5rem;"><button type="button" class="eye-toggle" onclick="togglePassword('loginPassword', this)"><svg width="20" height="20" viewBox="0 0 24 24" fill="rgba(200,169,110,0.08)" stroke="#c8a96e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3" fill="none" stroke="#c8a96e" stroke-width="1.5"></circle><circle cx="12" cy="12" r="1" fill="#c8a96e"></circle></svg></button></div></div>
       <div style="text-align:right;margin-bottom:1rem;"><a href="#" onclick="switchAuthTab('forgot');return false;" style="color:var(--muted);font-size:0.55rem;text-decoration:none;">Forgot Password?</a></div>
       <div class="form-error" id="loginError"></div>
       <button class="modal-submit" id="loginBtn" onclick="doLogin()">Login →</button>
@@ -380,8 +386,8 @@
     <div class="auth-form" id="registerForm">
       <div class="form-group"><label>Email</label><input type="email" id="regEmail" placeholder="your@email.com" autocomplete="email"></div>
       <div class="form-group"><label>Username</label><input type="text" id="regUsername" placeholder="choose a username" autocomplete="username"></div>
-      <div class="form-group"><label>Password</label><div style="position:relative"><input type="password" id="regPassword" placeholder="min 6 characters" autocomplete="new-password" style="padding-right:2.5rem;"><button type="button" onclick="togglePassword('regPassword')" style="position:absolute;right:0;top:0;height:100%;background:none;border:none;color:var(--muted);padding:0 0.8rem;cursor:pointer;font-size:0.8rem;">👁</button></div></div>
-      <div class="form-group"><label>Confirm Password</label><div style="position:relative"><input type="password" id="regConfirm" placeholder="repeat password" autocomplete="new-password" style="padding-right:2.5rem;"><button type="button" onclick="togglePassword('regConfirm')" style="position:absolute;right:0;top:0;height:100%;background:none;border:none;color:var(--muted);padding:0 0.8rem;cursor:pointer;font-size:0.8rem;">👁</button></div></div>
+      <div class="form-group"><label>Password</label><div style="position:relative"><input type="password" id="regPassword" placeholder="min 6 characters" autocomplete="new-password" style="padding-right:2.5rem;"><button type="button" class="eye-toggle" onclick="togglePassword('regPassword', this)"><svg width="20" height="20" viewBox="0 0 24 24" fill="rgba(200,169,110,0.08)" stroke="#c8a96e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3" fill="none" stroke="#c8a96e" stroke-width="1.5"></circle><circle cx="12" cy="12" r="1" fill="#c8a96e"></circle></svg></button></div></div>
+      <div class="form-group"><label>Confirm Password</label><div style="position:relative"><input type="password" id="regConfirm" placeholder="repeat password" autocomplete="new-password" style="padding-right:2.5rem;"><button type="button" class="eye-toggle" onclick="togglePassword('regConfirm', this)"><svg width="20" height="20" viewBox="0 0 24 24" fill="rgba(200,169,110,0.08)" stroke="#c8a96e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3" fill="none" stroke="#c8a96e" stroke-width="1.5"></circle><circle cx="12" cy="12" r="1" fill="#c8a96e"></circle></svg></button></div></div>
       <div class="form-error" id="registerError"></div>
       <button class="modal-submit" id="registerBtn" onclick="doRegister()">Create Account →</button>
     </div>
@@ -399,7 +405,7 @@
     <!-- RESET PASSWORD -->
     <div class="auth-form" id="resetForm">
       <div style="font-size:0.65rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.6;">Enter your new password below.</div>
-      <div class="form-group"><label>New Password</label><div style="position:relative"><input type="password" id="resetPassword" placeholder="min 6 characters" style="padding-right:2.5rem;"><button type="button" onclick="togglePassword('resetPassword')" style="position:absolute;right:0;top:0;height:100%;background:none;border:none;color:var(--muted);padding:0 0.8rem;cursor:pointer;font-size:0.8rem;">👁</button></div></div>
+      <div class="form-group"><label>New Password</label><div style="position:relative"><input type="password" id="resetPassword" placeholder="min 6 characters" style="padding-right:2.5rem;"><button type="button" class="eye-toggle" onclick="togglePassword('resetPassword', this)"><svg width="20" height="20" viewBox="0 0 24 24" fill="rgba(200,169,110,0.08)" stroke="#c8a96e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3" fill="none" stroke="#c8a96e" stroke-width="1.5"></circle><circle cx="12" cy="12" r="1" fill="#c8a96e"></circle></svg></button></div></div>
       <div class="form-error" id="resetError"></div>
       <button class="modal-submit" id="resetBtn" onclick="doResetPassword()">Reset Password →</button>
     </div>
@@ -706,14 +712,15 @@
     errEl.classList.remove('show');
     
     if (password !== confirm) { errEl.textContent = 'Passwords do not match'; errEl.classList.add('show'); return; }
-    btn.disabled = true; btn.textContent = 'Creating...';
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-spinner"></span> Creating Account...';
     try {
       const data = await api('POST', '/api/auth/register', { email, username, password });
       showToast(data.message || 'Check your email to verify!', 'success');
       switchAuthTab('login');
       document.getElementById('loginEmail').value = email;
     } catch (e) { errEl.textContent = e.message; errEl.classList.add('show'); }
-    btn.disabled = false; btn.textContent = 'Create Account →';
+    btn.disabled = false; btn.innerHTML = 'Create Account →';
   }
 
   async function doForgotPassword() {
@@ -1215,9 +1222,17 @@
     if (e.key === 'Escape') { closeLightbox(); closeAuthModal(); closeUploadModal(); closeConfirm(); }
   });
 
-  function togglePassword(id) {
+  function togglePassword(id, btn) {
     const el = document.getElementById(id);
-    if (el) el.type = el.type === 'password' ? 'text' : 'password';
+    if (el) {
+      const isPass = el.type === 'password';
+      el.type = isPass ? 'text' : 'password';
+      if (btn) {
+        btn.innerHTML = isPass 
+          ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="rgba(200,169,110,0.04)" stroke="#c8a96e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23" stroke="#c8a96e" stroke-width="1.5"></line></svg>'
+          : '<svg width="20" height="20" viewBox="0 0 24 24" fill="rgba(200,169,110,0.08)" stroke="#c8a96e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3" fill="none" stroke="#c8a96e" stroke-width="1.5"></circle><circle cx="12" cy="12" r="1" fill="#c8a96e"></circle></svg>';
+      }
+    }
   }
 
   let currentLayout = localStorage.getItem('frame_layout') || 'grid';

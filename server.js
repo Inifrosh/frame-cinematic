@@ -114,13 +114,20 @@ app.post('/api/auth/register', async (req, res) => {
       const host = req.get('host') || `localhost:${PORT}`;
       const protocol = req.get('x-forwarded-proto') || req.protocol || 'http';
       const verifyUrl = `${protocol}://${host}/verify?token=${verifyToken}`;
-      await sendMail(email, 'Verify your FRAME account', `<p>Click <a href="${verifyUrl}">here</a> to verify your account.</p>`);
-      res.json({ success: true, message: 'Account created! Please check your email to verify before logging in.' });
+      await sendMail(email, 'Verify your FRAME account', `
+        <div style="font-family:monospace;max-width:500px;margin:0 auto;padding:2rem;background:#0a0a0a;color:#d4d0c8;border:1px solid #1e1e1e;">
+          <h1 style="font-family:Georgia,serif;font-weight:300;color:#f0ece0;font-size:1.8rem;margin-bottom:0.5rem;">Welcome to <span style="color:#c8a96e;">FRAME</span></h1>
+          <p style="font-size:0.85rem;color:#5a5750;margin-bottom:1.5rem;">Verify your account to get started</p>
+          <a href="${verifyUrl}" style="display:inline-block;background:#c8a96e;color:#050505;text-decoration:none;padding:0.75rem 2rem;font-family:monospace;font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;font-weight:700;">Verify Email →</a>
+          <p style="font-size:0.7rem;color:#5a5750;margin-top:1.5rem;">If you didn't create this account, ignore this email.</p>
+        </div>
+      `);
+      res.json({ success: true, message: 'Account created! Check your email to verify before logging in.' });
     } catch (err) {
-      console.error('Mail failure:', err);
-      // Fallback: If email fails to send, auto-verify them so they aren't stuck forever.
+      console.error('Mail failure:', err.message);
+      // Auto-verify as fallback so users aren't stuck
       await supabase.from('users').update({ isVerified: true, verifyToken: null }).eq('email', email);
-      res.json({ success: true, message: 'Account created! (Email service unavailable, so we automatically verified you). You can now log in.' });
+      res.json({ success: true, message: 'Account created and verified! You can now log in.' });
     }
   } else {
     res.json({ success: true, message: 'Admin account created successfully! You can now log in.' });
@@ -159,7 +166,14 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     const host = req.get('host') || `localhost:${PORT}`;
     const protocol = req.protocol || 'http';
     const resetUrl = `${protocol}://${host}/?reset=${resetToken}`;
-    await sendMail(email, 'FRAME Password Reset', `<p>Click <a href="${resetUrl}">here</a> to reset your password.</p>`);
+    await sendMail(email, 'FRAME Password Reset', `
+      <div style="font-family:monospace;max-width:500px;margin:0 auto;padding:2rem;background:#0a0a0a;color:#d4d0c8;border:1px solid #1e1e1e;">
+        <h1 style="font-family:Georgia,serif;font-weight:300;color:#f0ece0;font-size:1.8rem;margin-bottom:0.5rem;"><span style="color:#c8a96e;">FRAME</span> Password Reset</h1>
+        <p style="font-size:0.85rem;color:#5a5750;margin-bottom:1.5rem;">Click the button below to reset your password</p>
+        <a href="${resetUrl}" style="display:inline-block;background:#c8a96e;color:#050505;text-decoration:none;padding:0.75rem 2rem;font-family:monospace;font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;font-weight:700;">Reset Password →</a>
+        <p style="font-size:0.7rem;color:#5a5750;margin-top:1.5rem;">This link expires in 1 hour. If you didn't request this, ignore this email.</p>
+      </div>
+    `);
   }
   res.json({ success: true, message: 'If that email exists, a reset link has been sent.' });
 });
