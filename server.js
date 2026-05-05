@@ -17,7 +17,9 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 // ── MAILER ───────────────────────────────────────
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
+  port: process.env.SMTP_PORT || 587,
+  secure: false, // false for 587, true for 465
   auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
 });
 
@@ -108,11 +110,18 @@ app.post('/api/auth/register', async (req, res) => {
   });
   
   if (!isAdmin) {
-    const host = req.get('host') || `localhost:${PORT}`;
-    const protocol = req.get('x-forwarded-proto') || req.protocol || 'http';
-    const verifyUrl = `${protocol}://${host}/verify?token=${verifyToken}`;
-    await sendMail(email, 'Verify your FRAME account', `<p>Click <a href="${verifyUrl}">here</a> to verify your account.</p>`);
-    res.json({ success: true, message: 'Account created! Please check your email to verify before logging in.' });
+    try {
+      const host = req.get('host') || `localhost:${PORT}`;
+      const protocol = req.get('x-forwarded-proto') || req.protocol || 'http';
+      const verifyUrl = `${protocol}://${host}/verify?token=${verifyToken}`;
+      await sendMail(email, 'Verify your FRAME account', `<p>Click <a href="${verifyUrl}">here</a> to verify your account.</p>`);
+      res.json({ success: true, message: 'Account created! Please check your email to verify before logging in.' });
+    } catch (err) {
+      console.error('Mail failure:', err);
+      // Fallback: If email fails to send, auto-verify them so they aren't stuck forever.
+      await supabase.from('users').update({ isVerified: true, verifyToken: null }).eq('email', email);
+      res.json({ success: true, message: 'Account created! (Email service unavailable, so we automatically verified you). You can now log in.' });
+    }
   } else {
     res.json({ success: true, message: 'Admin account created successfully! You can now log in.' });
   }
