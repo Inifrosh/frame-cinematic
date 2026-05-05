@@ -17,9 +17,9 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 // ── MAILER ───────────────────────────────────────
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
-  port: process.env.SMTP_PORT || 587,
-  secure: false, // false for 587, true for 465
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
   auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
 });
 
@@ -325,4 +325,17 @@ app.get('/video/:filename', async (req, res) => {
 
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
-app.listen(PORT, () => console.log(`🎬 FRAME running at http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`🎬 FRAME running at http://localhost:${PORT}`);
+
+  // ── KEEP-ALIVE: Ping self every 14 min to prevent Render free-tier sleep ──
+  const RENDER_URL = 'https://frame-cinematic.onrender.com';
+  setInterval(async () => {
+    try {
+      const res = await fetch(RENDER_URL);
+      console.log(`[keep-alive] pinged ${RENDER_URL} — ${res.status}`);
+    } catch (err) {
+      console.error('[keep-alive] ping failed:', err.message);
+    }
+  }, 14 * 60 * 1000); // every 14 minutes
+});
