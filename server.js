@@ -17,20 +17,29 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 // ── MAILER ───────────────────────────────────────
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
-  auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+  host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
+  port: process.env.SMTP_PORT || 587,
+  secure: false,
+  auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 10000
 });
 
 async function sendMail(to, subject, html) {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS || process.env.EMAIL_USER.includes('your_gmail')) {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS || process.env.SMTP_USER.includes('your_gmail')) {
     console.log('\n--- EMAIL CONFIG MISSING: MOCKING EMAIL ---');
-    console.log(`To: ${to}\nSubject: ${subject}\nBody: ${html}`);
+    console.log(`To: ${to}\nSubject: ${subject}`);
     console.log('-------------------------------------------\n');
     return;
   }
-  return transporter.sendMail({ from: `"FRAME" <${process.env.EMAIL_USER}>`, to, subject, html });
+  // Timeout wrapper so the request never hangs
+  const result = await Promise.race([
+    transporter.sendMail({ from: `"FRAME" <${process.env.SMTP_USER}>`, to, subject, html }),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Email send timed out after 15s')), 15000))
+  ]);
+  console.log(`[mail] sent to ${to} — ${subject}`);
+  return result;
 }
 
 // ── AUTH ─────────────────────────────────────────
