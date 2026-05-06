@@ -8,6 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --black: #050505; --deep: #0a0a0a; --card: #111111; --border: #1e1e1e;
@@ -165,10 +166,11 @@
   .modal-submit:not(:disabled):hover { background: var(--accent2); }
   .btn-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid transparent; border-top-color: var(--black); border-right-color: var(--black); border-radius: 50%; animation: btnSpin 0.6s linear infinite; }
   @keyframes btnSpin { to { transform: rotate(360deg); } }
-  .eye-toggle { position:absolute;right:0;top:0;height:100%;background:none;border:none;padding:0 0.8rem;cursor:pointer;display:flex;align-items:center;transition:filter 0.2s; }
-  .eye-toggle:hover { filter: drop-shadow(0 0 4px rgba(200,169,110,0.5)); }
-  .eye-toggle svg { transition: transform 0.2s ease; }
-  .eye-toggle:hover svg { transform: scale(1.15); }
+  .google-btn { width:100%; background:var(--card); border:1px solid var(--border); color:var(--white); font-family:'Space Mono',monospace; font-size:0.65rem; letter-spacing:0.18em; text-transform:uppercase; padding:1rem 1.5rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.9rem; transition:all 0.3s; }
+  .google-btn:hover { border-color:var(--accent); background:rgba(200,169,110,0.05); transform:translateY(-1px); }
+  .google-btn:active { transform:translateY(0); }
+  .google-btn:disabled { opacity:0.6; cursor:not-allowed; }
+  .auth-divider { text-align:center; font-size:0.5rem; color:var(--muted); letter-spacing:0.2em; text-transform:uppercase; margin:1.5rem 0; }
   .upload-progress { margin-top: 1.2rem; display: none; }
   .upload-progress.show { display: block; }
   .progress-bar-wrap { height: 2px; background: var(--border); margin-bottom: 0.5rem; }
@@ -270,8 +272,7 @@
     <div class="tagline">Cinematic Portfolio</div>
   </div>
   <div class="nav-right" id="navRight">
-    <button class="nav-btn ghost" onclick="openAuthModal('login')">Login</button>
-    <button class="nav-btn" onclick="openAuthModal('register')">Register</button>
+    <button class="nav-btn" onclick="openAuthModal()">Sign In</button>
   </div>
 </nav>
 
@@ -363,51 +364,28 @@
 
 <!-- AUTH MODAL -->
 <div class="modal-overlay" id="authModal" onclick="handleAuthOverlayClick(event)">
-  <div class="modal">
+  <div class="modal" style="text-align:center;">
     <button class="modal-close" onclick="closeAuthModal()">✕</button>
     <div class="modal-title">Welcome</div>
-    <div class="modal-sub">Join the archive</div>
-    
-    <div class="modal-tabs">
-      <button class="modal-tab active" id="loginTab" onclick="switchAuthTab('login')">Login</button>
-      <button class="modal-tab" id="registerTab" onclick="switchAuthTab('register')">Register</button>
+    <div class="modal-sub">Access the archive</div>
+
+    <div style="margin:2.5rem 0 2rem;">
+      <p style="font-size:0.6rem;color:var(--muted);letter-spacing:0.15em;line-height:2;margin-bottom:2rem;">
+        Sign in to manage your storage<br>and cinematic portfolio
+      </p>
+      <button class="google-btn" id="googleSignInBtn" onclick="signInWithGoogle()">
+        <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+        </svg>
+        Continue with Google
+      </button>
     </div>
 
-    <!-- LOGIN -->
-    <div class="auth-form active" id="loginForm">
-      <div class="form-group"><label>Email</label><input type="text" id="loginEmail" placeholder="your@email.com" autocomplete="email"></div>
-      <div class="form-group"><label>Password</label><div style="position:relative"><input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" style="padding-right:2.5rem;"><button type="button" class="eye-toggle" onclick="togglePassword('loginPassword', this)"><svg width="20" height="20" viewBox="0 0 24 24" fill="rgba(200,169,110,0.08)" stroke="#c8a96e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3" fill="none" stroke="#c8a96e" stroke-width="1.5"></circle><circle cx="12" cy="12" r="1" fill="#c8a96e"></circle></svg></button></div></div>
-      <div style="text-align:right;margin-bottom:1rem;"><a href="#" onclick="switchAuthTab('forgot');return false;" style="color:var(--muted);font-size:0.55rem;text-decoration:none;">Forgot Password?</a></div>
-      <div class="form-error" id="loginError"></div>
-      <button class="modal-submit" id="loginBtn" onclick="doLogin()">Login →</button>
-    </div>
-
-    <!-- REGISTER -->
-    <div class="auth-form" id="registerForm">
-      <div class="form-group"><label>Email</label><input type="email" id="regEmail" placeholder="your@email.com" autocomplete="email"></div>
-      <div class="form-group"><label>Username</label><input type="text" id="regUsername" placeholder="choose a username" autocomplete="username"></div>
-      <div class="form-group"><label>Password</label><div style="position:relative"><input type="password" id="regPassword" placeholder="min 6 characters" autocomplete="new-password" style="padding-right:2.5rem;"><button type="button" class="eye-toggle" onclick="togglePassword('regPassword', this)"><svg width="20" height="20" viewBox="0 0 24 24" fill="rgba(200,169,110,0.08)" stroke="#c8a96e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3" fill="none" stroke="#c8a96e" stroke-width="1.5"></circle><circle cx="12" cy="12" r="1" fill="#c8a96e"></circle></svg></button></div></div>
-      <div class="form-group"><label>Confirm Password</label><div style="position:relative"><input type="password" id="regConfirm" placeholder="repeat password" autocomplete="new-password" style="padding-right:2.5rem;"><button type="button" class="eye-toggle" onclick="togglePassword('regConfirm', this)"><svg width="20" height="20" viewBox="0 0 24 24" fill="rgba(200,169,110,0.08)" stroke="#c8a96e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3" fill="none" stroke="#c8a96e" stroke-width="1.5"></circle><circle cx="12" cy="12" r="1" fill="#c8a96e"></circle></svg></button></div></div>
-      <div class="form-error" id="registerError"></div>
-      <button class="modal-submit" id="registerBtn" onclick="doRegister()">Create Account →</button>
-    </div>
-
-    <!-- FORGOT PASSWORD -->
-    <div class="auth-form" id="forgotForm">
-      <div style="font-size:0.65rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.6;">Enter your email and we'll send you a link to reset your password.</div>
-      <div class="form-group"><label>Email</label><input type="email" id="forgotEmail" placeholder="your@email.com"></div>
-      <div class="form-error" id="forgotError"></div>
-      <div class="toast success" id="forgotSuccess" style="position:static;transform:none;opacity:1;display:none;margin-bottom:1rem;font-size:0.5rem;"></div>
-      <button class="modal-submit" id="forgotBtn" onclick="doForgotPassword()">Send Reset Link →</button>
-      <div style="text-align:center;margin-top:1rem;"><a href="#" onclick="switchAuthTab('login');return false;" style="color:var(--muted);font-size:0.55rem;text-decoration:none;">← Back to Login</a></div>
-    </div>
-
-    <!-- RESET PASSWORD -->
-    <div class="auth-form" id="resetForm">
-      <div style="font-size:0.65rem;color:var(--muted);margin-bottom:1.5rem;line-height:1.6;">Enter your new password below.</div>
-      <div class="form-group"><label>New Password</label><div style="position:relative"><input type="password" id="resetPassword" placeholder="min 6 characters" style="padding-right:2.5rem;"><button type="button" class="eye-toggle" onclick="togglePassword('resetPassword', this)"><svg width="20" height="20" viewBox="0 0 24 24" fill="rgba(200,169,110,0.08)" stroke="#c8a96e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3" fill="none" stroke="#c8a96e" stroke-width="1.5"></circle><circle cx="12" cy="12" r="1" fill="#c8a96e"></circle></svg></button></div></div>
-      <div class="form-error" id="resetError"></div>
-      <button class="modal-submit" id="resetBtn" onclick="doResetPassword()">Reset Password →</button>
+    <div style="font-size:0.48rem;color:var(--muted);letter-spacing:0.1em;line-height:1.8;opacity:0.7;">
+      By signing in you agree to our terms of service.
     </div>
   </div>
 </div>
@@ -646,22 +624,64 @@
 
   window.addEventListener('popstate', handleRoute);
 
+  // ── SUPABASE CLIENT ───────────────────────────────
+  const _supa = window.supabase.createClient(
+    'https://xhjcuqbnzvaohgcwsooc.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhoamN1cWJuenZhb2hnY3dzb29jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MTM5MDYsImV4cCI6MjA5MzQ4OTkwNn0.ieDJEnau3zLKrZFO6EZ6PrlaEy119eSHJA5hQ1bjdTY'
+  );
+
+  async function signInWithGoogle() {
+    const btn = document.getElementById('googleSignInBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Redirecting...'; }
+    const { error } = await _supa.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin }
+    });
+    if (error) {
+      showToast('Google sign-in failed: ' + error.message, 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'Continue with Google'; }
+    }
+  }
+
   // ── AUTH ──────────────────────────────────────────
   async function checkAuth() {
+    // 1. Try our own stored session token first
     const token = getToken();
-    if (!token) { updateNavGuest(); return; }
-    try {
-      const data = await api('GET', '/api/auth/me');
-      currentUser = data;
-      updateNavUser(data.username, data.isAdmin);
-    } catch { clearToken(); updateNavGuest(); }
+    if (token) {
+      try {
+        const data = await api('GET', '/api/auth/me');
+        currentUser = data;
+        updateNavUser(data.username, data.isAdmin);
+        return;
+      } catch { clearToken(); }
+    }
+
+    // 2. Check if Supabase just redirected back with an OAuth session
+    const { data: { session } } = await _supa.auth.getSession();
+    if (session) {
+      try {
+        const data = await api('POST', '/api/auth/google', { accessToken: session.access_token });
+        setToken(data.token);
+        currentUser = data;
+        updateNavUser(data.username, data.isAdmin);
+        // Clean up Supabase session — we use our own sessions from here
+        await _supa.auth.signOut();
+        closeAuthModal();
+        showToast('Welcome, ' + data.username + '!', 'success');
+        return;
+      } catch (e) {
+        showToast('Sign-in failed: ' + e.message, 'error');
+        await _supa.auth.signOut();
+      }
+    }
+
+    updateNavGuest();
   }
 
   function updateNavGuest() {
     currentUser = null;
-    document.getElementById('navRight').innerHTML = `
-      <button class="nav-btn ghost" onclick="openAuthModal('login')">Login</button>
-      <button class="nav-btn" onclick="openAuthModal('register')">Register</button>`;
+    document.getElementById('navRight').innerHTML =
+      '<button class="nav-btn" onclick="openAuthModal()">Sign In</button>';
     document.getElementById('storageSection').classList.remove('visible');
   }
 
@@ -671,7 +691,7 @@
       <span class="nav-user">@${username}${adminBadge}</span>
       <button class="nav-btn" onclick="openUploadModal()">+ Upload</button>
       <button class="nav-btn ghost" onclick="doLogout()">Logout</button>`;
-      
+
     if (isAdmin) {
       document.getElementById('storageSection').classList.remove('visible');
       document.getElementById('portfolioSelectBtn').style.display = 'inline-block';
@@ -679,90 +699,18 @@
       document.getElementById('storageSection').classList.add('visible');
       document.getElementById('storageSelectBtn').style.display = 'inline-block';
     }
-    
+
     document.getElementById('uploadModalTitle').textContent = isAdmin ? 'Add to Portfolio' : 'Upload to My Storage';
     document.getElementById('uploadModalSub').textContent = isAdmin ? 'This will appear publicly on the homepage' : 'Only you can see this';
     if (!isAdmin) loadStorage();
   }
 
-  async function doLogin() {
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value;
-    const errEl = document.getElementById('loginError');
-    const btn = document.getElementById('loginBtn');
-    errEl.classList.remove('show');
-    btn.disabled = true; btn.textContent = 'Logging in...';
-    try {
-      const data = await api('POST', '/api/auth/login', { email, password });
-      setToken(data.token); currentUser = data;
-      updateNavUser(data.username, data.isAdmin);
-      closeAuthModal(); showToast('Welcome back, ' + data.username + '!');
-      loadPortfolio();
-    } catch (e) { errEl.textContent = e.message; errEl.classList.add('show'); }
-    btn.disabled = false; btn.textContent = 'Login →';
-  }
-
-  async function doRegister() {
-    const email = document.getElementById('regEmail').value.trim();
-    const username = document.getElementById('regUsername').value.trim();
-    const password = document.getElementById('regPassword').value;
-    const confirm = document.getElementById('regConfirm').value;
-    const errEl = document.getElementById('registerError');
-    const btn = document.getElementById('registerBtn');
-    errEl.classList.remove('show');
-    
-    if (password !== confirm) { errEl.textContent = 'Passwords do not match'; errEl.classList.add('show'); return; }
-    btn.disabled = true;
-    btn.innerHTML = '<span class="btn-spinner"></span> Creating Account...';
-    try {
-      const data = await api('POST', '/api/auth/register', { email, username, password });
-      showToast(data.message || 'Check your email to verify!', 'success');
-      switchAuthTab('login');
-      document.getElementById('loginEmail').value = email;
-    } catch (e) { errEl.textContent = e.message; errEl.classList.add('show'); }
-    btn.disabled = false; btn.innerHTML = 'Create Account →';
-  }
-
-  async function doForgotPassword() {
-    const email = document.getElementById('forgotEmail').value.trim();
-    const errEl = document.getElementById('forgotError');
-    const sucEl = document.getElementById('forgotSuccess');
-    const btn = document.getElementById('forgotBtn');
-    errEl.classList.remove('show'); sucEl.style.display = 'none';
-    if (!email) { errEl.textContent = 'Please enter your email'; errEl.classList.add('show'); return; }
-    btn.disabled = true; btn.textContent = 'Sending...';
-    try {
-      const data = await api('POST', '/api/auth/forgot-password', { email });
-      sucEl.textContent = data.message;
-      sucEl.style.display = 'block';
-    } catch (e) { errEl.textContent = e.message; errEl.classList.add('show'); }
-    btn.disabled = false; btn.textContent = 'Send Reset Link →';
-  }
-
-  async function doResetPassword() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('reset');
-    const password = document.getElementById('resetPassword').value;
-    const errEl = document.getElementById('resetError');
-    const btn = document.getElementById('resetBtn');
-    errEl.classList.remove('show');
-    btn.disabled = true; btn.textContent = 'Resetting...';
-    try {
-      const data = await api('POST', '/api/auth/reset-password', { token, password });
-      showToast(data.message, 'success');
-      switchAuthTab('login');
-    } catch (e) { errEl.textContent = e.message; errEl.classList.add('show'); }
-    btn.disabled = false; btn.textContent = 'Reset Password →';
-  }
-
   async function doLogout() {
     try { await api('POST', '/api/auth/logout'); } catch {}
     clearToken(); updateNavGuest(); showToast('Logged out');
-    
     document.getElementById('portfolioSelectBtn').style.display = 'none';
     document.getElementById('storageSelectBtn').style.display = 'none';
     if (isSelectionMode) toggleSelectionMode();
-    
     loadPortfolio();
   }
 
@@ -1157,29 +1105,12 @@
   }
 
   // ── MODALS ────────────────────────────────────────
-  function openAuthModal(tab) { switchAuthTab(tab || 'login'); document.getElementById('authModal').classList.add('active'); }
+  function openAuthModal() { document.getElementById('authModal').classList.add('active'); }
   function closeAuthModal() { document.getElementById('authModal').classList.remove('active'); }
   function handleAuthOverlayClick(e) { if (e.target.id === 'authModal') closeAuthModal(); }
-  function switchAuthTab(tab) {
-    document.getElementById('loginTab').classList.toggle('active', tab === 'login');
-    document.getElementById('registerTab').classList.toggle('active', tab === 'register');
-    
-    document.getElementById('loginForm').classList.toggle('active', tab === 'login');
-    document.getElementById('registerForm').classList.toggle('active', tab === 'register');
-    document.getElementById('forgotForm').classList.toggle('active', tab === 'forgot');
-    document.getElementById('resetForm').classList.toggle('active', tab === 'reset');
-    
-    if (tab === 'forgot' || tab === 'reset') {
-      document.getElementById('loginTab').style.display = 'none';
-      document.getElementById('registerTab').style.display = 'none';
-    } else {
-      document.getElementById('loginTab').style.display = 'block';
-      document.getElementById('registerTab').style.display = 'block';
-    }
-  }
 
   function openUploadModal() {
-    if (!currentUser) { openAuthModal('login'); return; }
+    if (!currentUser) { openAuthModal(); return; }
     selectedFiles = []; fileThumbnails = [];
     document.getElementById('fileInput').value = '';
     document.getElementById('dropText').innerHTML = 'Drop video files here<br>or click to browse<br><br>MP4 · MOV · AVI · MKV · WEBM';
@@ -1207,9 +1138,8 @@
     }
   });
 
-  document.getElementById('loginPassword').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-  document.getElementById('regConfirm').addEventListener('keydown', e => { if (e.key === 'Enter') doRegister(); });
-  document.getElementById('resetPassword').addEventListener('keydown', e => { if (e.key === 'Enter') doResetPassword(); });
+  // Keyboard shortcut: Escape closes all modals
+  // (handled by the global keydown listener below)
 
   function showToast(msg, type) {
     const t = document.getElementById('toast');

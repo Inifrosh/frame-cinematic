@@ -4,7 +4,6 @@ const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
@@ -15,46 +14,7 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// ── MAILER ───────────────────────────────────────
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
-  port: process.env.SMTP_PORT || 587,
-  secure: false,
-  auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 10000
-});
-
-async function sendMail(to, subject, html) {
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS || process.env.SMTP_USER.includes('your_gmail')) {
-    console.log('\n--- EMAIL CONFIG MISSING: MOCKING EMAIL ---');
-    console.log(`To: ${to}\nSubject: ${subject}`);
-    console.log('-------------------------------------------\n');
-    return;
-  }
-  // Timeout wrapper so the request never hangs
-  const result = await Promise.race([
-    transporter.sendMail({ from: `"FRAME" <${process.env.SMTP_USER}>`, to, subject, html }),
-    new Promise((_, reject) => setTimeout(() => reject(new Error('Email send timed out after 15s')), 15000))
-  ]);
-  console.log(`[mail] sent to ${to} — ${subject}`);
-  return result;
-}
-
 // ── AUTH ─────────────────────────────────────────
-function hashPassword(password) {
-  const salt = crypto.randomBytes(16).toString('hex');
-  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha256').toString('hex');
-  return `${salt}:${hash}`;
-}
-function verifyPassword(password, stored) {
-  if (!stored) return false;
-  const parts = stored.split(':');
-  if(parts.length !== 2) return false;
-  const [salt, hash] = parts;
-  return crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha256').toString('hex') === hash;
-}
 
 async function createSession(userId, username, isAdmin) {
   const token = crypto.randomBytes(32).toString('hex');
@@ -98,104 +58,50 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ── AUTH ROUTES ───────────────────────────────────
-app.post('/api/auth/register', async (req, res) => {
-  const { email, username, password } = req.body;
-  if (!email || !username || !password) return res.status(400).json({ error: 'Email, username and password required' });
-  if (username.length < 3) return res.status(400).json({ error: 'Username must be at least 3 characters' });
-  if (password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
-  
-  const { data: existingUser } = await supabase.from('users').select('id, email, username').or(`email.ilike.${email},username.ilike.${username}`);
-  if (existingUser && existingUser.length > 0) {
-    if (existingUser.some(u => u.email.toLowerCase() === email.toLowerCase())) return res.status(400).json({ error: 'Email already registered' });
-    return res.status(400).json({ error: 'Username already taken' });
-  }
-  
-  const isAdmin = username.toLowerCase() === ADMIN_USERNAME.toLowerCase();
-  const verifyToken = crypto.randomBytes(20).toString('hex');
-  
-  await supabase.from('users').insert({ 
-    id: uuidv4(), email, username, password: hashPassword(password), 
-    isAdmin, isVerified: isAdmin, verifyToken: isAdmin ? null : verifyToken
-  });
-  
-  if (!isAdmin) {
-    try {
-      const host = req.get('host') || `localhost:${PORT}`;
-      const protocol = req.get('x-forwarded-proto') || req.protocol || 'http';
-      const verifyUrl = `${protocol}://${host}/verify?token=${verifyToken}`;
-      await sendMail(email, 'Verify your FRAME account', `
-        <div style="font-family:monospace;max-width:500px;margin:0 auto;padding:2rem;background:#0a0a0a;color:#d4d0c8;border:1px solid #1e1e1e;">
-          <h1 style="font-family:Georgia,serif;font-weight:300;color:#f0ece0;font-size:1.8rem;margin-bottom:0.5rem;">Welcome to <span style="color:#c8a96e;">FRAME</span></h1>
-          <p style="font-size:0.85rem;color:#5a5750;margin-bottom:1.5rem;">Verify your account to get started</p>
-          <a href="${verifyUrl}" style="display:inline-block;background:#c8a96e;color:#050505;text-decoration:none;padding:0.75rem 2rem;font-family:monospace;font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;font-weight:700;">Verify Email →</a>
-          <p style="font-size:0.7rem;color:#5a5750;margin-top:1.5rem;">If you didn't create this account, ignore this email.</p>
-        </div>
-      `);
-      res.json({ success: true, message: 'Account created! Check your email to verify before logging in.' });
-    } catch (err) {
-      console.error('Mail failure:', err.message);
-      // Auto-verify as fallback so users aren't stuck
-      await supabase.from('users').update({ isVerified: true, verifyToken: null }).eq('email', email);
-      res.json({ success: true, message: 'Account created and verified! You can now log in.' });
+
+// Google OAuth — frontend sends Supabase access token, we create a server session
+app.post('/api/auth/google', async (req, res) => {
+  const { accessToken } = req.body;
+  if (!accessToken) return res.status(400).json({ error: 'Access token required' });
+
+  // Verify the Supabase JWT and get the user
+  const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+  if (error || !user) return res.status(401).json({ error: 'Invalid or expired Google token' });
+
+  const email = user.email;
+  const displayName = user.user_metadata?.full_name || user.user_metadata?.name || '';
+
+  // Look up existing user in our DB
+  let { data: dbUser } = await supabase.from('users').select('*').ilike('email', email).maybeSingle();
+
+  if (!dbUser) {
+    // Build a clean username from display name or email
+    let base = displayName
+      ? displayName.replace(/[^a-zA-Z0-9_]/g, '').substring(0, 20)
+      : email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '').substring(0, 20);
+    if (!base) base = 'user';
+
+    let username = base;
+    const { data: taken } = await supabase.from('users').select('id').ilike('username', username).maybeSingle();
+    if (taken) username = base + '_' + Math.floor(Math.random() * 9000 + 1000);
+
+    const adminEmail = (process.env.ADMIN_EMAIL || '').toLowerCase();
+    const isAdmin = email.toLowerCase() === adminEmail || username.toLowerCase() === ADMIN_USERNAME.toLowerCase();
+
+    const { data: newUser, error: insertError } = await supabase.from('users').insert({
+      id: uuidv4(), email, username,
+      password: null, isAdmin, isVerified: true, verifyToken: null
+    }).select().single();
+
+    if (insertError) {
+      console.error('User insert error:', insertError);
+      return res.status(500).json({ error: 'Failed to create user account' });
     }
-  } else {
-    res.json({ success: true, message: 'Admin account created successfully! You can now log in.' });
+    dbUser = newUser;
   }
-});
 
-app.get('/verify', async (req, res) => {
-  const { token } = req.query;
-  const { data: user } = await supabase.from('users').select('*').eq('verifyToken', token).single();
-  if (!user) return res.status(400).send('Invalid or expired verification link.');
-  
-  await supabase.from('users').update({ isVerified: true, verifyToken: null }).eq('id', user.id);
-  res.send('<div style="font-family:monospace;text-align:center;margin-top:50px">Account verified! You can now close this window and log in on the main site.</div>');
-});
-
-app.post('/api/auth/login', async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
-  
-  const { data: user } = await supabase.from('users').select('*').or(`email.ilike.${email},username.ilike.${email}`).single();
-  if (!user || !verifyPassword(password, user.password)) return res.status(401).json({ error: 'Invalid email or password' });
-  if (user.email && !user.isVerified) return res.status(403).json({ error: 'Please verify your email before logging in.' });
-  
-  const token = await createSession(user.id, user.username, user.isAdmin);
-  res.json({ token, username: user.username, userId: user.id, isAdmin: user.isAdmin });
-});
-
-app.post('/api/auth/forgot-password', async (req, res) => {
-  const { email } = req.body;
-  const { data: user } = await supabase.from('users').select('*').ilike('email', email).single();
-  if (user) {
-    const resetToken = crypto.randomBytes(20).toString('hex');
-    const resetTokenExp = Date.now() + 3600000;
-    await supabase.from('users').update({ resetToken, resetTokenExp }).eq('id', user.id);
-    
-    const host = req.get('host') || `localhost:${PORT}`;
-    const protocol = req.protocol || 'http';
-    const resetUrl = `${protocol}://${host}/?reset=${resetToken}`;
-    await sendMail(email, 'FRAME Password Reset', `
-      <div style="font-family:monospace;max-width:500px;margin:0 auto;padding:2rem;background:#0a0a0a;color:#d4d0c8;border:1px solid #1e1e1e;">
-        <h1 style="font-family:Georgia,serif;font-weight:300;color:#f0ece0;font-size:1.8rem;margin-bottom:0.5rem;"><span style="color:#c8a96e;">FRAME</span> Password Reset</h1>
-        <p style="font-size:0.85rem;color:#5a5750;margin-bottom:1.5rem;">Click the button below to reset your password</p>
-        <a href="${resetUrl}" style="display:inline-block;background:#c8a96e;color:#050505;text-decoration:none;padding:0.75rem 2rem;font-family:monospace;font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;font-weight:700;">Reset Password →</a>
-        <p style="font-size:0.7rem;color:#5a5750;margin-top:1.5rem;">This link expires in 1 hour. If you didn't request this, ignore this email.</p>
-      </div>
-    `);
-  }
-  res.json({ success: true, message: 'If that email exists, a reset link has been sent.' });
-});
-
-app.post('/api/auth/reset-password', async (req, res) => {
-  const { token, password } = req.body;
-  if (!password || password.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
-  
-  const { data: user } = await supabase.from('users').select('*').eq('resetToken', token).single();
-  if (!user || Date.now() > user.resetTokenExp) return res.status(400).json({ error: 'Invalid or expired reset link' });
-  
-  await supabase.from('users').update({ password: hashPassword(password), resetToken: null, resetTokenExp: null }).eq('id', user.id);
-  res.json({ success: true, message: 'Password has been reset. You can now login.' });
+  const token = await createSession(dbUser.id, dbUser.username, dbUser.isAdmin);
+  res.json({ token, username: dbUser.username, userId: dbUser.id, isAdmin: dbUser.isAdmin });
 });
 
 app.post('/api/auth/logout', async (req, res) => {
