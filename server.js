@@ -8,7 +8,7 @@ const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'Inioluwa';
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || '1NI';
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
@@ -81,12 +81,15 @@ app.post('/api/auth/google', async (req, res) => {
       : email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '').substring(0, 20);
     if (!base) base = 'user';
 
-    let username = base;
-    const { data: taken } = await supabase.from('users').select('id').ilike('username', username).maybeSingle();
-    if (taken) username = base + '_' + Math.floor(Math.random() * 9000 + 1000);
-
     const adminEmail = (process.env.ADMIN_EMAIL || '').toLowerCase();
-    const isAdmin = email.toLowerCase() === adminEmail || username.toLowerCase() === ADMIN_USERNAME.toLowerCase();
+    const isAdmin = email.toLowerCase() === adminEmail;
+
+    // Force admin username for admin email; otherwise use derived name
+    let username = isAdmin ? ADMIN_USERNAME : base;
+    if (!isAdmin) {
+      const { data: taken } = await supabase.from('users').select('id').ilike('username', base).maybeSingle();
+      if (taken) username = base + '_' + Math.floor(Math.random() * 9000 + 1000);
+    }
 
     const { data: newUser, error: insertError } = await supabase.from('users').insert({
       id: uuidv4(), email, username,
